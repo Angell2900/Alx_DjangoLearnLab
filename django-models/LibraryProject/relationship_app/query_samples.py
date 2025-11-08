@@ -1,26 +1,24 @@
 from relationship_app.models import Book, Author, Library, Librarian
 
-
-books = Book.objects.all()
-print("All Books:", books)
-
+print("\n--- LIST ALL BOOKS IN A LIBRARY ---")
+library_name = "Central Library"  
 try:
-    harry = Book.objects.get(title="Harry Potter")
-    print("Specific Book:", harry)
-except Book.DoesNotExist:
-    print("Harry Potter is not in the database yet.")
+    library = Library.objects.get(name=library_name)
+    books_in_library = library.books.all()  
+    print(f"Books in {library_name}:", books_in_library)
+except Library.DoesNotExist:
+    print(f"No library named {library_name} found.")
 
-new_author = Author.objects.create(name="Chinua Achebe")
-print("New Author Created:", new_author)
 
-new_book = Book.objects.create(title="Things Fall Apart", author=new_author)
-print("New Book Created:", new_book)
+print("\n--- QUERY ALL BOOKS BY A SPECIFIC AUTHOR ---")
+author_name = "J.K. Rowling"
+books_by_author = Book.objects.filter(author__name=author_name)  
+print(f"Books by {author_name}:", books_by_author)
 
-authors = Author.objects.all()
-print("All Authors:", authors)
 
-libraries = Library.objects.all()
-print("Libraries:", libraries)
-
-librarians = Librarian.objects.all()
-print("Librarians:", librarians)
+print("\n--- RETRIEVE THE LIBRARIAN FOR A LIBRARY ---")
+try:
+    librarian = Librarian.objects.get(library=library)  
+    print(f"Librarian for {library_name}:", librarian)
+except:
+    print(f"No librarian assigned to {library_name}.")
