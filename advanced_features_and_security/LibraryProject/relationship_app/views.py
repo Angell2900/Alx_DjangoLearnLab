@@ -54,7 +54,7 @@ def member_view(request):
     return render(request, 'relationship_app/member_view.html')
 
 @csrf_protect
-@permission_required('relationship_app.can_add_book')
+@permission_required('relationship_app.can_create')
 @require_http_methods(["GET", "POST"])
 def add_book(request):
     if request.method == 'POST':
@@ -68,7 +68,7 @@ def add_book(request):
 
 
 @csrf_protect
-@permission_required('relationship_app.can_change_book')
+@permission_required('relationship_app.can_edit')
 @require_http_methods(["GET", "POST"])
 def edit_book(request, pk):
     book = get_object_or_404(Book, pk=pk)
@@ -80,7 +80,7 @@ def edit_book(request, pk):
 
 
 @csrf_protect
-@permission_required('relationship_app.can_delete_book')
+@permission_required('relationship_app.can_delete')
 @require_http_methods(["GET", "POST"])
 def delete_book(request, pk):
     book = get_object_or_404(Book, pk=pk)
