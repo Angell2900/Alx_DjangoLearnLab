@@ -1,10 +1,11 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.shortcuts import render
 from django.contrib.auth.decorators import user_passes_test
 
+User = get_user_model()
 
 class Author(models.Model):
     name = models.CharField(max_length=100)
@@ -18,7 +19,7 @@ class Book(models.Model):
 
     def __str__(self):
         return self.title
-    
+
     class Meta:
         permissions = [
             ("can_add_book", "Can add new books"),
@@ -46,7 +47,7 @@ class UserProfile(models.Model):
         ('Librarian', 'Librarian'),
         ('Member', 'Member'),
     ]
-    
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='Member')
 
