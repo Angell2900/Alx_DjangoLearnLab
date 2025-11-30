@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import generics, permissions, filters, status
+from rest_framework import generics, filters, status
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Author, Book
 from .serializers import AuthorSerializer, BookSerializer
@@ -41,7 +42,7 @@ class BookListView(generics.ListCreateAPIView):
     """
     queryset = Book.objects.select_related('author').all()
     serializer_class = BookSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     
     filter_backends = [
         DjangoFilterBackend,
@@ -69,7 +70,7 @@ class BookDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
     queryset = Book.objects.select_related('author').all()
     serializer_class = BookSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     def perform_update(self, serializer):
         """Hook called after serializer validation during PUT/PATCH."""
@@ -80,36 +81,36 @@ class CreateView(BookListView):
     """
     CreateView for adding a new book.
     
-    Permission Classes: IsAuthenticatedOrReadOnly
+    Permission Classes: IsAuthenticated
     - POST: Authenticated users only
     
     This view inherits from BookListView and handles the creation of new books.
     """
-    pass
+    permission_classes = [IsAuthenticated]
 
 
 class UpdateView(BookDetailView):
     """
     UpdateView for modifying an existing book.
     
-    Permission Classes: IsAuthenticatedOrReadOnly
+    Permission Classes: IsAuthenticated
     - PUT/PATCH: Authenticated users only
     
     This view inherits from BookDetailView and handles updating books.
     """
-    pass
+    permission_classes = [IsAuthenticated]
 
 
 class DeleteView(BookDetailView):
     """
     DeleteView for removing a book.
     
-    Permission Classes: IsAuthenticatedOrReadOnly
+    Permission Classes: IsAuthenticated
     - DELETE: Authenticated users only
     
     This view inherits from BookDetailView and handles deletion of books.
     """
-    pass
+    permission_classes = [IsAuthenticated]
 
 
 # ============================================================================
@@ -126,7 +127,7 @@ class AuthorListView(generics.ListCreateAPIView):
     """
     queryset = Author.objects.prefetch_related('books').all()
     serializer_class = AuthorSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name']
@@ -144,4 +145,4 @@ class AuthorDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
     queryset = Author.objects.prefetch_related('books').all()
     serializer_class = AuthorSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly]
