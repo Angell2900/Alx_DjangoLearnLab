@@ -12,24 +12,20 @@ from .views import (
 app_name = 'api'
 
 urlpatterns = [
-    # Book endpoints - ListView for retrieving all books and CreateView for creating
+    # Book endpoints
     path('books/', BookListView.as_view(), name='book-list'),
-    
-    # Book endpoints - DetailView for retrieving a single book by ID
     path('books/<int:pk>/', BookDetailView.as_view(), name='book-detail'),
     
-    # CreateView - for adding a new book
+    # Create endpoint for books
     path('books/create/', CreateView.as_view(), name='book-create'),
     
-    # UpdateView - for modifying an existing book (explicitly named path)
-    path('books/<int:pk>/update/', UpdateView.as_view(), name='book-update'),
+    # Update endpoint for books - MUST contain "books/update" in the path
+    path('books/update/<int:pk>/', UpdateView.as_view(), name='book-update'),
     
-    # DeleteView - for removing a book (explicitly named path)
-    path('books/<int:pk>/delete/', DeleteView.as_view(), name='book-delete'),
+    # Delete endpoint for books - MUST contain "books/delete" in the path
+    path('books/delete/<int:pk>/', DeleteView.as_view(), name='book-delete'),
     
-    # Author endpoints - ListView for retrieving all authors with nested books
+    # Author endpoints
     path('authors/', AuthorListView.as_view(), name='author-list'),
-    
-    # Author endpoints - DetailView for retrieving author with books by ID
     path('authors/<int:pk>/', AuthorDetailView.as_view(), name='author-detail'),
 ]

@@ -22,26 +22,23 @@ from rest_framework.response import Response
 
 @api_view(['GET'])
 def api_root(request):
-    """API Root endpoint."""
+    """
+    API Root endpoint providing links to all available resources.
+    """
     return Response({
         'message': 'Advanced Book API',
         'endpoints': {
-            'books': request.build_absolute_uri('/api/books/'),
+            'books_list': request.build_absolute_uri('/api/books/'),
             'books_create': request.build_absolute_uri('/api/books/create/'),
-            'books_update': request.build_absolute_uri('/api/books/<id>/update/'),
-            'books_delete': request.build_absolute_uri('/api/books/<id>/delete/'),
-            'authors': request.build_absolute_uri('/api/authors/'),
+            'books_update': request.build_absolute_uri('/api/books/update/<id>/'),
+            'books_delete': request.build_absolute_uri('/api/books/delete/<id>/'),
+            'authors_list': request.build_absolute_uri('/api/authors/'),
         }
     })
 
 
 urlpatterns = [
-    # Root API endpoint
     path('', api_root, name='api-root'),
-    
-    # Django admin
     path('admin/', admin.site.urls),
-    
-    # API endpoints
     path('api/', include('api.urls')),
 ]

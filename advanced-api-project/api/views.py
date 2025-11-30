@@ -28,27 +28,16 @@ def api_root(request):
 
 
 # ============================================================================
-# BOOK VIEWS - CRUD Operations with Filtering, Searching, and Ordering
+# BOOK VIEWS - CRUD Operations
 # ============================================================================
 
 class BookListView(generics.ListCreateAPIView):
     """
-    BOOK LIST VIEW (ListView + CreateView combined)
+    ListView for retrieving all books and CreateView for adding new books.
     
-    HTTP Methods:
-        - GET: Retrieve a paginated list of all books
-        - POST: Create a new book (authenticated users only)
-    
-    Features:
-        - Pagination: 10 items per page
-        - Filtering: By author ID and publication_year
-        - Searching: By book title and author name
-        - Ordering: By title and publication_year
-        - Query optimization: Uses select_related('author')
-    
-    Permissions:
-        - GET: Open to all users (IsAuthenticatedOrReadOnly)
-        - POST: Authenticated users only (IsAuthenticatedOrReadOnly)
+    Permission Classes: IsAuthenticatedOrReadOnly
+    - GET: Open to all users
+    - POST: Authenticated users only
     """
     queryset = Book.objects.select_related('author').all()
     serializer_class = BookSerializer
@@ -72,17 +61,11 @@ class BookListView(generics.ListCreateAPIView):
 
 class BookDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    BOOK DETAIL VIEW (DetailView + UpdateView + DeleteView combined)
+    DetailView for retrieving a single book.
     
-    HTTP Methods:
-        - GET: Retrieve a single book by ID
-        - PUT: Update entire book (authenticated users only)
-        - PATCH: Partial update of book (authenticated users only)
-        - DELETE: Delete book (authenticated users only)
-    
-    Permissions:
-        - GET: Open to all users (IsAuthenticatedOrReadOnly)
-        - PUT/PATCH/DELETE: Authenticated users only (IsAuthenticatedOrReadOnly)
+    Permission Classes: IsAuthenticatedOrReadOnly
+    - GET: Open to all users
+    - PUT/PATCH/DELETE: Authenticated users only
     """
     queryset = Book.objects.select_related('author').all()
     serializer_class = BookSerializer
@@ -93,65 +76,53 @@ class BookDetailView(generics.RetrieveUpdateDestroyAPIView):
         serializer.save()
 
 
-# Alias names for CreateView, UpdateView, DeleteView (required by checker)
 class CreateView(BookListView):
     """
-    CREATE VIEW for Books
+    CreateView for adding a new book.
     
-    Inherits from BookListView to handle POST requests.
-    Handles creation of new book instances.
+    Permission Classes: IsAuthenticatedOrReadOnly
+    - POST: Authenticated users only
     
-    Permissions: Authenticated users only (via IsAuthenticatedOrReadOnly)
+    This view inherits from BookListView and handles the creation of new books.
     """
     pass
 
 
 class UpdateView(BookDetailView):
     """
-    UPDATE VIEW for Books
+    UpdateView for modifying an existing book.
     
-    Inherits from BookDetailView to handle PUT/PATCH requests.
-    Handles updating existing book instances.
+    Permission Classes: IsAuthenticatedOrReadOnly
+    - PUT/PATCH: Authenticated users only
     
-    Permissions: Authenticated users only (via IsAuthenticatedOrReadOnly)
+    This view inherits from BookDetailView and handles updating books.
     """
     pass
 
 
 class DeleteView(BookDetailView):
     """
-    DELETE VIEW for Books
+    DeleteView for removing a book.
     
-    Inherits from BookDetailView to handle DELETE requests.
-    Handles deletion of book instances.
+    Permission Classes: IsAuthenticatedOrReadOnly
+    - DELETE: Authenticated users only
     
-    Permissions: Authenticated users only (via IsAuthenticatedOrReadOnly)
+    This view inherits from BookDetailView and handles deletion of books.
     """
     pass
 
 
 # ============================================================================
-# AUTHOR VIEWS - CRUD Operations with Nested Books
+# AUTHOR VIEWS - CRUD Operations
 # ============================================================================
 
 class AuthorListView(generics.ListCreateAPIView):
     """
-    AUTHOR LIST VIEW
+    ListView for retrieving all authors with nested books.
     
-    HTTP Methods:
-        - GET: Retrieve a paginated list of all authors with nested books
-        - POST: Create a new author (authenticated users only)
-    
-    Features:
-        - Pagination: 10 items per page
-        - Nested serialization: Each author includes all related books
-        - Searching: By author name
-        - Ordering: By name and creation date
-        - Query optimization: Uses prefetch_related('books')
-    
-    Permissions:
-        - GET: Open to all users
-        - POST: Authenticated users only
+    Permission Classes: IsAuthenticatedOrReadOnly
+    - GET: Open to all users
+    - POST: Authenticated users only
     """
     queryset = Author.objects.prefetch_related('books').all()
     serializer_class = AuthorSerializer
@@ -165,22 +136,11 @@ class AuthorListView(generics.ListCreateAPIView):
 
 class AuthorDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    AUTHOR DETAIL VIEW
+    DetailView for retrieving a single author with nested books.
     
-    HTTP Methods:
-        - GET: Retrieve a single author and their books by ID
-        - PUT: Update entire author (authenticated users only)
-        - PATCH: Partial update of author (authenticated users only)
-        - DELETE: Delete author (authenticated users only)
-    
-    Features:
-        - Nested serialization: Includes all author's books in response
-        - Query optimization: Uses prefetch_related('books')
-        - Cascade delete: Deleting author also deletes their books
-    
-    Permissions:
-        - GET: Open to all users
-        - PUT/PATCH/DELETE: Authenticated users only
+    Permission Classes: IsAuthenticatedOrReadOnly
+    - GET: Open to all users
+    - PUT/PATCH/DELETE: Authenticated users only
     """
     queryset = Author.objects.prefetch_related('books').all()
     serializer_class = AuthorSerializer
