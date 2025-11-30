@@ -508,3 +508,7 @@ class AuthorAPITestCase(TestCase):
         response = self.client.delete(f'/api/authors/{self.author.id}/')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(Author.objects.count(), 1)
+
+def test_login(self):
+    login_success = self.client.login(username='testuser', password='testpass123')
+    self.assertTrue(login_success)
