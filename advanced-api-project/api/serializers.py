@@ -146,11 +146,7 @@ class AuthorSerializer(serializers.ModelSerializer):
     # Nested serializer that includes all books related to this author
     # many=True indicates this is a one-to-many relationship
     # read_only=True because we don't accept book data in POST requests for authors
-    books = BookSerializer(
-        many=True,
-        read_only=True,
-        help_text="List of all books by this author"
-    )
+    books = BookSerializer(many=True, read_only=True)
     
     # Custom field that calculates the number of books dynamically
     books_count = serializers.SerializerMethodField(
