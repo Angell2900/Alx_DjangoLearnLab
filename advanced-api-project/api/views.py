@@ -47,8 +47,8 @@ class BookListView(generics.ListCreateAPIView):
         - Query optimization: Uses select_related('author')
     
     Permissions:
-        - GET: Open to all users
-        - POST: Authenticated users only
+        - GET: Open to all users (IsAuthenticatedOrReadOnly)
+        - POST: Authenticated users only (IsAuthenticatedOrReadOnly)
     """
     queryset = Book.objects.select_related('author').all()
     serializer_class = BookSerializer
@@ -81,8 +81,8 @@ class BookDetailView(generics.RetrieveUpdateDestroyAPIView):
         - DELETE: Delete book (authenticated users only)
     
     Permissions:
-        - GET: Open to all users
-        - PUT/PATCH/DELETE: Authenticated users only
+        - GET: Open to all users (IsAuthenticatedOrReadOnly)
+        - PUT/PATCH/DELETE: Authenticated users only (IsAuthenticatedOrReadOnly)
     """
     queryset = Book.objects.select_related('author').all()
     serializer_class = BookSerializer
@@ -101,7 +101,7 @@ class CreateView(BookListView):
     Inherits from BookListView to handle POST requests.
     Handles creation of new book instances.
     
-    Permissions: Authenticated users only
+    Permissions: Authenticated users only (via IsAuthenticatedOrReadOnly)
     """
     pass
 
@@ -113,7 +113,7 @@ class UpdateView(BookDetailView):
     Inherits from BookDetailView to handle PUT/PATCH requests.
     Handles updating existing book instances.
     
-    Permissions: Authenticated users only
+    Permissions: Authenticated users only (via IsAuthenticatedOrReadOnly)
     """
     pass
 
@@ -125,7 +125,7 @@ class DeleteView(BookDetailView):
     Inherits from BookDetailView to handle DELETE requests.
     Handles deletion of book instances.
     
-    Permissions: Authenticated users only
+    Permissions: Authenticated users only (via IsAuthenticatedOrReadOnly)
     """
     pass
 

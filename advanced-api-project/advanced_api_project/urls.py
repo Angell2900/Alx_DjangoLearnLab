@@ -27,6 +27,9 @@ def api_root(request):
         'message': 'Advanced Book API',
         'endpoints': {
             'books': request.build_absolute_uri('/api/books/'),
+            'books_create': request.build_absolute_uri('/api/books/create/'),
+            'books_update': request.build_absolute_uri('/api/books/<id>/update/'),
+            'books_delete': request.build_absolute_uri('/api/books/<id>/delete/'),
             'authors': request.build_absolute_uri('/api/authors/'),
         }
     })
