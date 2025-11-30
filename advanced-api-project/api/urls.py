@@ -9,25 +9,35 @@ from .views import (
 app_name = 'api'
 
 urlpatterns = [
-    # Book endpoints
-    # GET: List all books with filtering, searching, ordering
-    # POST: Create a new book (authenticated users only)
+    # ========================================================================
+    # BOOK ENDPOINTS
+    # ========================================================================
+    
+    # List all books and create new books
+    # GET:  /api/books/              - List all books with filtering/search/order
+    # POST: /api/books/              - Create new book (authenticated only)
     path('books/', BookListView.as_view(), name='book-list'),
     
-    # GET: Retrieve a specific book by ID
-    # PUT: Update entire book object (authenticated users only)
-    # PATCH: Partial update of book object (authenticated users only)
-    # DELETE: Delete a book (authenticated users only)
+    # Retrieve, update, or delete a specific book
+    # GET:    /api/books/<id>/       - Retrieve book by ID
+    # PUT:    /api/books/<id>/       - Update entire book (authenticated only)
+    # PATCH:  /api/books/<id>/       - Partial update book (authenticated only)
+    # DELETE: /api/books/<id>/       - Delete book (authenticated only)
     path('books/<int:pk>/', BookDetailView.as_view(), name='book-detail'),
     
-    # Author endpoints
-    # GET: List all authors with their nested books
-    # POST: Create a new author (authenticated users only)
+    # ========================================================================
+    # AUTHOR ENDPOINTS
+    # ========================================================================
+    
+    # List all authors and create new authors
+    # GET:  /api/authors/            - List all authors with nested books
+    # POST: /api/authors/            - Create new author (authenticated only)
     path('authors/', AuthorListView.as_view(), name='author-list'),
     
-    # GET: Retrieve a specific author with their books by ID
-    # PUT: Update entire author object (authenticated users only)
-    # PATCH: Partial update of author object (authenticated users only)
-    # DELETE: Delete an author and cascade delete their books (authenticated users only)
+    # Retrieve, update, or delete a specific author
+    # GET:    /api/authors/<id>/     - Retrieve author with books
+    # PUT:    /api/authors/<id>/     - Update entire author (authenticated only)
+    # PATCH:  /api/authors/<id>/     - Partial update author (authenticated only)
+    # DELETE: /api/authors/<id>/     - Delete author and cascade delete books
     path('authors/<int:pk>/', AuthorDetailView.as_view(), name='author-detail'),
 ]

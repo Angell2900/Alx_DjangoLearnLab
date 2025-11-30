@@ -1,128 +1,125 @@
 from django.shortcuts import render
-from rest_framework import generics, permissions, filters, status
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework import generics, permissions, filters, status
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Author, Book
 from .serializers import AuthorSerializer, BookSerializer
 
 
+@api_view(['GET'])
+def api_root(request):
+    """
+    API Root endpoint providing links to all available resources.
+    """
+    return Response({
+        'message': 'Welcome to the Advanced Book API',
+        'endpoints': {
+            'books': request.build_absolute_uri('/api/books/'),
+            'authors': request.build_absolute_uri('/api/authors/'),
+            'admin': request.build_absolute_uri('/admin/'),
+        },
+        'documentation': {
+            'filtering': 'Add ?author=1 or ?publication_year=1997',
+            'searching': 'Add ?search=keyword',
+            'ordering': 'Add ?ordering=title or ?ordering=-publication_year',
+        }
+    })
+
+
+# ============================================================================
+# BOOK VIEWS - CRUD Operations with Filtering, Searching, and Ordering
+# ============================================================================
+
 class BookListView(generics.ListCreateAPIView):
     """
-    API view for listing and creating Book instances.
+    BOOK LIST VIEW
     
-    This generic view handles two main HTTP methods:
-    1. GET: Retrieve a paginated list of all books with filtering, searching, and ordering
-    2. POST: Create a new book (requires authentication)
-    
-    Advanced Query Capabilities:
-        
-        FILTERING:
-        - Filter by author ID: ?author=1
-        - Filter by publication_year: ?publication_year=1997
-        - Combine filters: ?author=1&publication_year=1997
-        
-        SEARCHING:
-        - Search by book title: ?search=Harry
-        - Search by author name: ?search=Rowling
-        
-        ORDERING:
-        - Order by title (ascending): ?ordering=title
-        - Order by title (descending): ?ordering=-title
-        - Order by publication year (ascending): ?ordering=publication_year
-        - Order by publication year (descending): ?ordering=-publication_year
-        - Multiple fields: ?ordering=-publication_year,title
-        
-        PAGINATION:
-        - Default 10 items per page
-        - Access page 2: ?page=2
+    HTTP Methods:
+        - GET: Retrieve a paginated list of all books
+        - POST: Create a new book (authenticated users only)
     
     Features:
-        - Pagination: 10 items per page (configurable via DEFAULT_PAGE_SIZE in settings)
+        - Pagination: 10 items per page
         - Filtering: By author ID and publication_year
-        - Search: On book title and author name
-        - Ordering: By title and publication_year (default: descending publication_year)
-        - Query optimization: Uses select_related('author') to avoid N+1 queries
+        - Searching: By book title and author name
+        - Ordering: By title and publication_year
+        - Query optimization: Uses select_related('author')
     
     Permissions:
-        - GET: Open to all users (authenticated and unauthenticated)
-        - POST: Restricted to authenticated users only (IsAuthenticatedOrReadOnly)
+        - GET: Open to all users
+        - POST: Authenticated users only
     
-    Query Parameters Examples:
-        GET /api/books/ - Get all books
-        GET /api/books/?author=1 - Filter by author ID
-        GET /api/books/?publication_year=1997 - Filter by publication year
-        GET /api/books/?search=Harry - Search for books containing "Harry" in title or author name
-        GET /api/books/?ordering=publication_year - Order by publication year ascending
-        GET /api/books/?ordering=-title - Order by title descending
-        
-        POST /api/books/ - Create a new book (requires authentication)
-        Headers: Authorization: Token YOUR_TOKEN
-        Body: {
-            "title": "The Hobbit",
-            "publication_year": 1937,
-            "author": 1
-        }
+    Query Parameters:
+        - author: Filter by author ID (e.g., ?author=1)
+        - publication_year: Filter by year (e.g., ?publication_year=1997)
+        - search: Search by title or author (e.g., ?search=Harry)
+        - ordering: Order results (e.g., ?ordering=-publication_year)
+        - page: Pagination (e.g., ?page=2)
+    
+    Example Requests:
+        GET /api/books/
+        GET /api/books/?author=1&publication_year=1997
+        GET /api/books/?search=Harry
+        POST /api/books/ (with authentication)
     """
     queryset = Book.objects.select_related('author').all()
     serializer_class = BookSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     
-    # Configure filtering, searching, and ordering
+    # Configure filtering, searching, and ordering backends
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
         filters.OrderingFilter,
     ]
+    
+    # Specify which fields can be filtered
     filterset_fields = ['author', 'publication_year']
+    
+    # Specify which fields can be searched
     search_fields = ['title', 'author__name']
+    
+    # Specify which fields can be ordered
     ordering_fields = ['title', 'publication_year', 'created_at']
+    
+    # Default ordering when no ordering parameter provided
     ordering = ['-publication_year', 'title']
 
     def perform_create(self, serializer):
         """
-        Save the book instance when it's created.
+        Hook called after serializer validation during POST.
         
-        This method is called after validation passes during a POST request.
-        Override this to add custom logic before saving (e.g., logging, signals).
-        
-        Args:
-            serializer: The validated serializer instance
+        Can be overridden to add custom logic before saving.
+        Currently just saves the serializer data.
         """
         serializer.save()
 
 
 class BookDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    API view for retrieving, updating, and deleting a single Book instance.
+    BOOK DETAIL VIEW
     
-    This generic view handles three main HTTP methods:
-    1. GET: Retrieve a single book by ID
-    2. PUT/PATCH: Update an existing book (requires authentication)
-    3. DELETE: Delete a book (requires authentication)
+    HTTP Methods:
+        - GET: Retrieve a single book by ID
+        - PUT: Update entire book (authenticated users only)
+        - PATCH: Partial update of book (authenticated users only)
+        - DELETE: Delete book (authenticated users only)
     
     Features:
-        - Query optimization: Uses select_related('author') to avoid N+1 queries
-        - Full CRUD support: Retrieve, Update, Delete operations
-        - PATCH support: Partial updates of book fields
-        - Automatic 404 handling: Returns 404 if book not found
+        - Query optimization: Uses select_related('author')
+        - Full CRUD support on individual books
+        - Automatic 404 handling for non-existent books
     
     Permissions:
         - GET: Open to all users
-        - PUT/PATCH/DELETE: Restricted to authenticated users only
+        - PUT/PATCH/DELETE: Authenticated users only
     
-    URL Pattern Examples:
-        GET /api/books/1/ - Retrieve book with ID 1
-        PUT /api/books/1/ - Update entire book with ID 1 (requires authentication)
-        PATCH /api/books/1/ - Partial update of book with ID 1 (requires authentication)
-        DELETE /api/books/1/ - Delete book with ID 1 (requires authentication)
-    
-    Request Body Examples:
-        PUT/PATCH:
-        {
-            "title": "Updated Title",
-            "publication_year": 1998,
-            "author": 1
-        }
+    Example Requests:
+        GET /api/books/1/
+        PUT /api/books/1/ (with authentication)
+        PATCH /api/books/1/ (with authentication)
+        DELETE /api/books/1/ (with authentication)
     """
     queryset = Book.objects.select_related('author').all()
     serializer_class = BookSerializer
@@ -130,92 +127,92 @@ class BookDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_update(self, serializer):
         """
-        Save the updated book instance.
+        Hook called after serializer validation during PUT/PATCH.
         
-        This method is called after validation passes during a PUT or PATCH request.
-        Override this to add custom logic before saving.
-        
-        Args:
-            serializer: The validated serializer instance
+        Can be overridden to add custom logic before saving.
+        Currently just saves the serializer data.
         """
         serializer.save()
 
 
+# ============================================================================
+# AUTHOR VIEWS - CRUD Operations with Nested Books
+# ============================================================================
+
 class AuthorListView(generics.ListCreateAPIView):
     """
-    API view for listing and creating Author instances.
+    AUTHOR LIST VIEW
     
-    This generic view handles two main HTTP methods:
-    1. GET: Retrieve a paginated list of all authors with their nested books
-    2. POST: Create a new author (requires authentication)
+    HTTP Methods:
+        - GET: Retrieve a paginated list of all authors with nested books
+        - POST: Create a new author (authenticated users only)
     
     Features:
         - Pagination: 10 items per page
         - Nested serialization: Each author includes all related books
-        - Search: On author name
+        - Searching: By author name
         - Ordering: By name and creation date
-        - Query optimization: Uses prefetch_related('books') to optimize nested queries
+        - Query optimization: Uses prefetch_related('books')
     
     Permissions:
         - GET: Open to all users
-        - POST: Restricted to authenticated users only
+        - POST: Authenticated users only
     
-    Query Parameters Examples:
-        GET /api/authors/ - Get all authors
-        GET /api/authors/?search=Tolkien - Search for authors matching "Tolkien"
-        GET /api/authors/?ordering=name - Order by author name ascending
-        GET /api/authors/?ordering=-created_at - Order by creation date descending
-        
-        POST /api/authors/ - Create a new author (requires authentication)
-        Headers: Authorization: Token YOUR_TOKEN
-        Body: {
-            "name": "Isaac Asimov"
-        }
+    Query Parameters:
+        - search: Search by author name (e.g., ?search=Rowling)
+        - ordering: Order results (e.g., ?ordering=name)
+        - page: Pagination (e.g., ?page=2)
+    
+    Example Requests:
+        GET /api/authors/
+        GET /api/authors/?search=Tolkien
+        POST /api/authors/ (with authentication)
     """
     queryset = Author.objects.prefetch_related('books').all()
     serializer_class = AuthorSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     
+    # Configure searching and ordering backends
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    
+    # Specify which fields can be searched
     search_fields = ['name']
+    
+    # Specify which fields can be ordered
     ordering_fields = ['name', 'created_at']
+    
+    # Default ordering by name
     ordering = ['name']
 
 
 class AuthorDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    API view for retrieving, updating, and deleting a single Author instance.
+    AUTHOR DETAIL VIEW
     
-    This generic view handles three main HTTP methods:
-    1. GET: Retrieve a single author and their books by ID
-    2. PUT/PATCH: Update an existing author (requires authentication)
-    3. DELETE: Delete an author (requires authentication)
+    HTTP Methods:
+        - GET: Retrieve a single author and their books by ID
+        - PUT: Update entire author (authenticated users only)
+        - PATCH: Partial update of author (authenticated users only)
+        - DELETE: Delete author (authenticated users only)
     
     Features:
-        - Query optimization: Uses prefetch_related('books') for nested data
-        - Full CRUD support: Retrieve, Update, Delete operations
-        - Nested serialization: Includes all author's books in the response
-        - CASCADE delete: Deleting an author also deletes all their books
+        - Nested serialization: Includes all author's books in response
+        - Query optimization: Uses prefetch_related('books')
+        - Cascade delete: Deleting author also deletes their books
     
     Permissions:
         - GET: Open to all users
-        - PUT/PATCH/DELETE: Restricted to authenticated users only
+        - PUT/PATCH/DELETE: Authenticated users only
     
-    Note:
-        When an author is deleted, all their associated books will be
-        deleted due to CASCADE delete behavior defined in the Book model
+    Important Notes:
+        - When an author is deleted, all their books are cascade deleted
+          due to on_delete=models.CASCADE in the Book model
     
-    URL Pattern Examples:
-        GET /api/authors/1/ - Retrieve author with ID 1 and all their books
-        PUT /api/authors/1/ - Update entire author with ID 1 (requires authentication)
-        PATCH /api/authors/1/ - Partial update of author with ID 1 (requires authentication)
-        DELETE /api/authors/1/ - Delete author with ID 1 and cascade delete their books
-    
-    Request Body Examples:
-        PUT/PATCH:
-        {
-            "name": "Updated Author Name"
-        }
+    Example Requests:
+        GET /api/authors/1/
+        PUT /api/authors/1/ (with authentication)
+        PATCH /api/authors/1/ (with authentication)
+        DELETE /api/authors/1/ (with authentication - cascades to books)
     """
     queryset = Author.objects.prefetch_related('books').all()
     serializer_class = AuthorSerializer
