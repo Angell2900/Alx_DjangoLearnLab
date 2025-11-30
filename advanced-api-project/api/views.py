@@ -29,12 +29,17 @@ def api_root(request):
 
 
 # ============================================================================
-# BOOK VIEWS - CRUD Operations
+# BOOK VIEWS - CRUD Operations with Filtering, Searching, and Ordering
 # ============================================================================
 
 class BookListView(generics.ListCreateAPIView):
     """
     ListView for retrieving all books and CreateView for adding new books.
+    
+    Features:
+        - Filtering: By author, publication_year, title
+        - Searching: On title and author name (SearchFilter)
+        - Ordering: By title, publication_year (OrderingFilter)
     
     Permission Classes: IsAuthenticatedOrReadOnly
     - GET: Open to all users
@@ -44,14 +49,16 @@ class BookListView(generics.ListCreateAPIView):
     serializer_class = BookSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
     
-    filter_backends = [
-        DjangoFilterBackend,
-        filters.SearchFilter,
-        filters.OrderingFilter,
-    ]
+    # Configure filtering backend (DjangoFilterBackend)
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     
-    filterset_fields = ['author', 'publication_year']
+    # Configure fields that can be filtered
+    filterset_fields = ['author', 'publication_year', 'title']
+    
+    # Configure SearchFilter - search on title and author name
     search_fields = ['title', 'author__name']
+    
+    # Configure OrderingFilter - order by title and publication_year
     ordering_fields = ['title', 'publication_year', 'created_at']
     ordering = ['-publication_year', 'title']
 
@@ -85,6 +92,7 @@ class CreateView(BookListView):
     - POST: Authenticated users only
     
     This view inherits from BookListView and handles the creation of new books.
+    Includes filtering, searching, and ordering capabilities inherited from parent.
     """
     permission_classes = [IsAuthenticated]
 
@@ -121,6 +129,10 @@ class AuthorListView(generics.ListCreateAPIView):
     """
     ListView for retrieving all authors with nested books.
     
+    Features:
+        - Searching: On author name (SearchFilter)
+        - Ordering: By name and creation date (OrderingFilter)
+    
     Permission Classes: IsAuthenticatedOrReadOnly
     - GET: Open to all users
     - POST: Authenticated users only
@@ -129,8 +141,13 @@ class AuthorListView(generics.ListCreateAPIView):
     serializer_class = AuthorSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
     
+    # Configure SearchFilter and OrderingFilter
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    
+    # Configure SearchFilter - search on author name
     search_fields = ['name']
+    
+    # Configure OrderingFilter - order by name and created_at
     ordering_fields = ['name', 'created_at']
     ordering = ['name']
 
