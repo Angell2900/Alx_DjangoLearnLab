@@ -1,74 +1,58 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, generics
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from .models import Post, Comment, Like
-from .serializers import PostSerializer, CommentSerializer
 from accounts.models import CustomUser
 from notifications.models import Notification
+from .serializers import PostSerializer, CommentSerializer
 
-# Post CRUD
+# CRUD for posts
 class PostViewSet(viewsets.ModelViewSet):
-    queryset = Post.objects.all().order_by('-created_at')
+    queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        serializer.save(user=self.request.user)
 
-    def perform_update(self, serializer):
-        if self.request.user != serializer.instance.author:
-            raise PermissionError("Cannot edit others' posts")
-        serializer.save()
+    def get_queryset(self):
+        return Post.objects.filter(user=self.request.user)
 
-    def perform_destroy(self, instance):
-        if self.request.user != instance.author:
-            raise PermissionError("Cannot delete others' posts")
-        instance.delete()
-
-    @action(detail=True, methods=['POST'])
-    def like(self, request, pk=None):
-        post = get_object_or_404(Post, pk=pk)
-        Like.objects.get_or_create(user=request.user, post=post)
-        Notification.objects.create(
-            recipient=post.author,
-            actor=request.user,
-            verb='liked',
-            target=post
-        )
-        return Response({'status': 'post liked'})
-
-    @action(detail=True, methods=['POST'])
-    def unlike(self, request, pk=None):
-        post = get_object_or_404(Post, pk=pk)
-        Like.objects.filter(user=request.user, post=post).delete()
-        return Response({'status': 'post unliked'})
-
-# Comment CRUD
+# CRUD for comments
 class CommentViewSet(viewsets.ModelViewSet):
-    queryset = Comment.objects.all().order_by('-created_at')
+    queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        serializer.save(user=self.request.user)
 
-    def perform_update(self, serializer):
-        if self.request.user != serializer.instance.author:
-            raise PermissionError("Cannot edit others' comments")
-        serializer.save()
-
-    def perform_destroy(self, instance):
-        if self.request.user != instance.author:
-            raise PermissionError("Cannot delete others' comments")
-        instance.delete()
-
-# Feed
-class FeedViewSet(viewsets.ViewSet):
+# Feed view
+class FeedAPIView(generics.ListAPIView):
+    serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def list(self, request):
-        following_users = request.user.following.all()
-        posts = Post.objects.filter(author__in=following_users).order_by('-created_at')
-        serializer = PostSerializer(posts, many=True)
-        return Response(serializer.data)
+    def get_queryset(self):
+        following_users = self.request.user.following.all()
+        return Post.objects.filter(user__in=following_users).order_by('-created_at')
+
+# Like/Unlike
+class LikePostAPIView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        post = get_object_or_404(Post, pk=pk)
+        like, created = Like.objects.get_or_create(user=request.user, post=post)
+        if created:
+            Notification.objects.create(recipient=post.user, actor=request.user, verb='liked', target=post)
+            return Response({'status': 'post liked'})
+        return Response({'status': 'already liked'})
+
+class UnlikePostAPIView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        post = get_object_or_404(Post, pk=pk)
+        Like.objects.filter(user=request.user, post=post).delete()
+        return Response({'status': 'post unliked'})
