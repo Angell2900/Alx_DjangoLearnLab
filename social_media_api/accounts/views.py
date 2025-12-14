@@ -1,25 +1,36 @@
-from rest_framework.views import APIView
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
-from rest_framework import status
+from django.contrib.auth import get_user_model
+from rest_framework.views import APIView
 from .serializers import RegisterSerializer, LoginSerializer
-from django.contrib.auth import authenticate
 
-class RegisterAPIView(APIView):
-    def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+User = get_user_model()
+
+class RegisterAPIView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = RegisterSerializer
 
 class LoginAPIView(APIView):
+    serializer_class = LoginSerializer
+
     def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        if serializer.is_valid():
-            username = serializer.data.get('username')
-            password = serializer.data.get('password')
-            user = authenticate(username=username, password=password)
-            if user:
-                return Response({"message": "Login successful"})
-            return Response({"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data
+        return Response({"message": f"Welcome {user.username}!"})
+
+class FollowUserAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, user_id):
+        target_user = User.objects.get(id=user_id)
+        request.user.following.add(target_user)
+        return Response({"message": f"You are now following {target_user.username}"})
+
+class UnfollowUserAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, user_id):
+        target_user = User.objects.get(id=user_id)
+        request.user.following.remove(target_user)
+        return Response({"message": f"You unfollowed {target_user.username}"})
