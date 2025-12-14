@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -7,7 +7,7 @@ from accounts.models import CustomUser
 from notifications.models import Notification
 from .serializers import PostSerializer, CommentSerializer
 
-# Feed view
+# Feed
 class FeedViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -17,7 +17,7 @@ class FeedViewSet(viewsets.ViewSet):
         serializer = PostSerializer(posts, many=True)
         return Response(serializer.data)
 
-# Post CRUD
+# Like / Unlike
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all().order_by('-created_at')
     serializer_class = PostSerializer
@@ -43,12 +43,3 @@ class PostViewSet(viewsets.ModelViewSet):
         post = get_object_or_404(Post, pk=pk)
         Like.objects.filter(user=request.user, post=post).delete()
         return Response({'status': 'post unliked'})
-
-# Comment CRUD
-class CommentViewSet(viewsets.ModelViewSet):
-    queryset = Comment.objects.all().order_by('-created_at')
-    serializer_class = CommentSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
