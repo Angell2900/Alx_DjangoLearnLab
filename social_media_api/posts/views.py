@@ -18,12 +18,12 @@ class PostViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         if self.request.user != serializer.instance.author:
-            raise PermissionError("You cannot edit someone else's post")
+            raise PermissionError("Cannot edit others' posts")
         serializer.save()
 
     def perform_destroy(self, instance):
         if self.request.user != instance.author:
-            raise PermissionError("You cannot delete someone else's post")
+            raise PermissionError("Cannot delete others' posts")
         instance.delete()
 
     @action(detail=True, methods=['POST'])
@@ -55,15 +55,15 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         if self.request.user != serializer.instance.author:
-            raise PermissionError("You cannot edit someone else's comment")
+            raise PermissionError("Cannot edit others' comments")
         serializer.save()
 
     def perform_destroy(self, instance):
         if self.request.user != instance.author:
-            raise PermissionError("You cannot delete someone else's comment")
+            raise PermissionError("Cannot delete others' comments")
         instance.delete()
 
-# Feed view for posts from users you follow
+# Feed
 class FeedViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
