@@ -5,6 +5,8 @@ from django.shortcuts import get_object_or_404
 from django.conf import settings
 from .models import Post, Comment, Like
 from .serializers import PostSerializer, CommentSerializer
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 User = settings.AUTH_USER_MODEL
 
@@ -40,3 +42,13 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+class PostViewSet(viewsets.ModelViewSet):
+    # existing code ...
+
+    @action(detail=False, methods=['get'])
+    def feed(self, request):
+        user = request.user
+        posts = Post.objects.filter(user__in=user.following.all()).order_by('-created_at')
+        serializer = self.get_serializer(posts, many=True)
+        return Response(serializer.data)
