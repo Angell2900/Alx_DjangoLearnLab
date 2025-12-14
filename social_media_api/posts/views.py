@@ -7,7 +7,7 @@ from accounts.models import CustomUser
 from notifications.models import Notification
 from .serializers import PostSerializer, CommentSerializer
 
-# Feed
+# Feed showing posts from users you follow
 class FeedViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -17,7 +17,7 @@ class FeedViewSet(viewsets.ViewSet):
         serializer = PostSerializer(posts, many=True)
         return Response(serializer.data)
 
-# Like / Unlike
+# Post CRUD + like/unlike
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all().order_by('-created_at')
     serializer_class = PostSerializer
