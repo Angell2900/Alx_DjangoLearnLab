@@ -1,11 +1,12 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from django.conf import settings
 from .models import Post, Comment, Like
-from .serializers import PostSerializer, CommentSerializer, LikeSerializer
-from django.contrib.auth import get_user_model
+from .serializers import PostSerializer, CommentSerializer
 
-User = get_user_model()
+User = settings.AUTH_USER_MODEL
 
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all().order_by('-created_at')
@@ -15,32 +16,27 @@ class PostViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+    def get_queryset(self):
+        # Feed: posts from users the current user follows
+        user = self.request.user
+        return Post.objects.filter(user__in=user.following.all()).order_by('-created_at')
+
     @action(detail=True, methods=['post'])
     def like(self, request, pk=None):
-        post = self.get_object()
+        post = get_object_or_404(Post, pk=pk)
         Like.objects.get_or_create(user=request.user, post=post)
-        return Response({"message": "Post liked"})
+        return Response({'status': 'post liked'})
 
     @action(detail=True, methods=['post'])
     def unlike(self, request, pk=None):
-        post = self.get_object()
+        post = get_object_or_404(Post, pk=pk)
         Like.objects.filter(user=request.user, post=post).delete()
-        return Response({"message": "Post unliked"})
+        return Response({'status': 'post unliked'})
 
 class CommentViewSet(viewsets.ModelViewSet):
-    queryset = Comment.objects.all().order_by('-created_at')
+    queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
-class FeedAPIView(viewsets.ViewSet):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def list(self, request):
-        user = request.user
-        following_ids = user.following.values_list('id', flat=True)
-        posts = Post.objects.filter(user_id__in=following_ids).order_by('-created_at')
-        serializer = PostSerializer(posts, many=True)
-        return Response(serializer.data)

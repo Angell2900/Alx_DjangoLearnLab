@@ -1,16 +1,18 @@
 from rest_framework import generics, permissions
 from rest_framework.response import Response
-from rest_framework.authtoken.models import Token
-from .models import CustomUser
-from .serializers import RegisterSerializer, LoginSerializer
 from rest_framework.views import APIView
+from django.contrib.auth import get_user_model
+from rest_framework.authtoken.models import Token
+from .serializers import RegisterSerializer, LoginSerializer
 
-# User Registration
+User = get_user_model()
+
+# Registration
 class RegisterAPIView(generics.CreateAPIView):
-    queryset = CustomUser.objects.all()
+    queryset = User.objects.all()
     serializer_class = RegisterSerializer
 
-# User Login
+# Login
 class LoginAPIView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -18,30 +20,5 @@ class LoginAPIView(APIView):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data
-        token, _ = Token.objects.get_or_create(user=user)
+        token = Token.objects.get(user=user)
         return Response({'token': token.key})
-
-# User Profile
-class ProfileAPIView(generics.RetrieveUpdateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = RegisterSerializer
-
-    def get_object(self):
-        return self.request.user
-
-# Follow / Unfollow Users
-class FollowUserAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request, user_id):
-        user_to_follow = CustomUser.objects.get(id=user_id)
-        request.user.following.add(user_to_follow)
-        return Response({'detail': f'You are now following {user_to_follow.username}'})
-
-class UnfollowUserAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request, user_id):
-        user_to_unfollow = CustomUser.objects.get(id=user_id)
-        request.user.following.remove(user_to_unfollow)
-        return Response({'detail': f'You have unfollowed {user_to_unfollow.username}'})
