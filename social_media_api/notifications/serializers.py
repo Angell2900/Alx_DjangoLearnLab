@@ -1,11 +1,36 @@
 from rest_framework import serializers
-from .models import Notification
+from django.contrib.auth import get_user_model, authenticate
+from rest_framework.authtoken.models import Token
 
-class NotificationSerializer(serializers.ModelSerializer):
-    actor = serializers.StringRelatedField()
-    recipient = serializers.StringRelatedField()
-    target = serializers.StringRelatedField()
+User = get_user_model()
+
+class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
 
     class Meta:
-        model = Notification
-        fields = ['id', 'recipient', 'actor', 'verb', 'target', 'timestamp']
+        model = User
+        fields = ['id', 'username', 'email', 'password']
+
+    def create(self, validated_data):
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            password=validated_data['password']
+        )
+        Token.objects.create(user=user)
+        return user
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        user = authenticate(username=data['username'], password=data['password'])
+        if not user:
+            raise serializers.ValidationError("Invalid credentials")
+        return {'user': user}
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'bio', 'profile_picture', 'followers']
